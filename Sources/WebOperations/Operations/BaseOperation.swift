@@ -37,7 +37,7 @@ open class BaseOperation: Operation {
         return _executing
     }
     
-    public override func main() {
+    open override func main() {
         
         guard isCancelled == false else {
             finish()
@@ -52,7 +52,7 @@ open class BaseOperation: Operation {
         return _finished
     }
     
-    public func finish(retval: Any? = nil, error: Error? = nil) {
+    open func finish(retval: Any? = nil, error: Error? = nil) {
         DispatchQueue.main.async {
             if let error = error {
                 self.completion?(.failure(error))
@@ -64,7 +64,7 @@ open class BaseOperation: Operation {
         _finished = true
     }
     
-    public func finish<T: Codable>(retval: T? = nil, error: Error? = nil) {
+    open func finish<T: Codable>(retval: T? = nil, error: Error? = nil) {
         DispatchQueue.main.async {
             if let error = error {
                 self.completion?(.failure(error))
