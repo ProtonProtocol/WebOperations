@@ -115,7 +115,7 @@ public class WebOperations: NSObject {
     
     // MARK: - HTTP Base Requests
     
-    public func request(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, completion: ((Result<Data?, Error>) -> Void)?) {
+    public func request(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), completion: ((Result<Data?, Error>) -> Void)?) {
 
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
@@ -163,7 +163,7 @@ public class WebOperations: NSObject {
                 return
             }
 
-            if !(200...299).contains(response.statusCode) {
+            if !acceptableResponseCodeRange.contains(response.statusCode) {
                 DispatchQueue.main.async {
                     completion?(.failure(WebOperationsError.error("Response Error Status code: \(response.statusCode)")))
                 }
@@ -180,9 +180,9 @@ public class WebOperations: NSObject {
         
     }
 
-    public func request<T: Any>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, completion: ((Result<T?, Error>) -> Void)?) {
+    public func request<T: Any>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), completion: ((Result<T?, Error>) -> Void)?) {
 
-        request(method: method, auth: auth, authValue: authValue, contentType: contentType, url: url, parameters: parameters) { result in
+        request(method: method, auth: auth, authValue: authValue, contentType: contentType, url: url, parameters: parameters, acceptableResponseCodeRange: acceptableResponseCodeRange) { result in
 
             switch result {
 
@@ -217,9 +217,9 @@ public class WebOperations: NSObject {
 
     }
     
-    public func request<T: Codable>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, completion: ((Result<T, Error>) -> Void)?) {
+    public func request<T: Codable>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), completion: ((Result<T, Error>) -> Void)?) {
 
-        request(method: method, auth: auth, authValue: authValue, contentType: contentType, url: url, parameters: parameters) { result in
+        request(method: method, auth: auth, authValue: authValue, contentType: contentType, url: url, parameters: parameters, acceptableResponseCodeRange: acceptableResponseCodeRange) { result in
 
             switch result {
 
