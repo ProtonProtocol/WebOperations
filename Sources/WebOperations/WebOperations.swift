@@ -12,6 +12,7 @@ public class WebOperations: NSObject {
     
     public var operationQueueSeq: OperationQueue
     public var operationQueueMulti: OperationQueue
+    public var customOperationQueues: [String: OperationQueue]
     public var session: URLSession
     
     public enum RequestMethod: String {
@@ -31,57 +32,22 @@ public class WebOperations: NSObject {
         case none = ""
     }
     
-    /**
-     The WebOperations.Config struct which is a required param for initialisation of WebOperations
-    */
-    public struct Config {
-        
-        public var sessionConfig: URLSessionConfiguration
-        public var queueNamePrefix: String
-        
-        /**
-         Use this to build your configuration for the WebOperations singleton
-         - Parameter sessionConfig: The session configuration used for the URLSession
-         - Parameter queueNamePrefix: The prefix used to name the operation queues
-         */
-        public init(sessionConfig: URLSessionConfiguration = .default, queueNamePrefix: String = "") {
-            self.sessionConfig = sessionConfig
-            self.queueNamePrefix = queueNamePrefix
-        }
-        
-    }
-    
-    public static var config: Config?
-    
     public static let shared = WebOperations()
-    
-    /**
-     Use this function as your starting point to initialize the singleton class WebOperations
-     - Parameter config: The WebOperations.Config struct which is a required param for initialisation of WebOperations
-     - Returns: Initialized WebOperations singleton
-     */
-    @discardableResult
-    public static func initialize(_ config: Config) -> WebOperations {
-        WebOperations.config = config
-        return self.shared
-    }
     
     private override init() {
 
-        guard let config = WebOperations.config else {
-            fatalError("ERROR: You must call WebOperations.initialize(_ config: Config) before accessing WebOperations.shared")
-        }
-        
-        session = URLSession(configuration: config.sessionConfig)
+        session = URLSession(configuration: URLSessionConfiguration.default)
         
         operationQueueSeq = OperationQueue()
         operationQueueSeq.qualityOfService = .utility
         operationQueueSeq.maxConcurrentOperationCount = 1
-        operationQueueSeq.name = "\(config.queueNamePrefix).\(UUID()).seq"
+        operationQueueSeq.name = "\(UUID()).seq"
         
         operationQueueMulti = OperationQueue()
         operationQueueMulti.qualityOfService = .utility
-        operationQueueMulti.name = "\(config.queueNamePrefix).\(UUID()).multi"
+        operationQueueMulti.name = "\(UUID()).multi"
+        
+        customOperationQueues = [:]
         
     }
     
@@ -103,14 +69,47 @@ public class WebOperations: NSObject {
         
     }
     
+    public func add(_ operation: BaseOperation,
+                    toCustomQueueNamed queueName: String,
+                    completion: ((Result<Any?, Error>) -> Void)?) {
+        
+        if let queue = customOperationQueues[queueName] {
+            operation.completion = completion
+            queue.addOperation(operation)
+        } else {
+            completion?(.failure(WebOperationsError.error("MESSAGE => Custom Queue not found")))
+        }
+        
+    }
+    
+    public func addCustomQueue(_ queue: OperationQueue, forKey key: String) {
+        if let foundQueue = customOperationQueues.removeValue(forKey: key) {
+            foundQueue.cancelAllOperations()
+            queue.name = "\(key).\(UUID())"
+            customOperationQueues[key] = queue
+        }
+    }
+    
+    public func removeCustomQueue(_ queue: OperationQueue, forKey key: String) {
+        if let queue = customOperationQueues.removeValue(forKey: key) {
+            queue.cancelAllOperations()
+        }
+    }
+    
     public func suspend(_ isSuspended: Bool) {
         operationQueueSeq.isSuspended = isSuspended
         operationQueueMulti.isSuspended = isSuspended
+        for pair in customOperationQueues {
+            pair.value.isSuspended = isSuspended
+        }
     }
     
     public func cancelAll() {
         operationQueueSeq.cancelAllOperations()
         operationQueueMulti.cancelAllOperations()
+        for pair in customOperationQueues {
+            pair.value.cancelAllOperations()
+        }
     }
     
     // MARK: - HTTP Base Requests
