@@ -53,7 +53,7 @@ public class WebOperations: NSObject {
     
     public static var config: Config?
     
-    static let shared = WebOperations()
+    public static let shared = WebOperations()
     
     /**
      Use this function as your starting point to initialize the singleton class WebOperations
