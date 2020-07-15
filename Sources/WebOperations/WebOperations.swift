@@ -19,6 +19,7 @@ public class WebOperations: NSObject {
         case get = "GET"
         case post = "POST"
         case put = "PUT"
+        case patch = "PATCH"
     }
     
     public enum Auth: String {
