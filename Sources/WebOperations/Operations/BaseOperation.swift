@@ -16,7 +16,7 @@ open class BaseOperation: Operation {
     public var baseOperation: BaseOperation!
     public var completion: ((Result<Any?, Error>) -> Void)!
     
-    override init() {}
+    public override init() {}
     
     public convenience init(_ completion: @escaping ((Result<Any?, Error>) -> Void)) {
         self.init()
