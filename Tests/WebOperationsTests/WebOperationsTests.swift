@@ -1,13 +1,11 @@
 import XCTest
 @testable import WebOperations
+import Mocker
 
+// TODO: Add tests
 final class WebOperationsTests: XCTestCase {
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        XCTAssertEqual(WebOperations().text, "Hello, World!")
-    }
+    
+    func testExample() {}
 
     static var allTests = [
         ("testExample", testExample),
