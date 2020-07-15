@@ -1,6 +1,5 @@
 import XCTest
 @testable import WebOperations
-import Mocker
 
 // TODO: Add tests
 final class WebOperationsTests: XCTestCase {

@@ -4,4 +4,4 @@
 
 ## Description
 
-WebOperations is a Singleton library that simplifies basic networking by utilizing Operations and OperationQueues.
+WebOperations is a Singleton library for Swift that simplifies basic networking by utilizing Operations and OperationQueues.
