@@ -11,7 +11,7 @@ import Foundation
 /**
 Create your own Operations be inheriting from BaseOperation. Checkout BasicGetOperation.swift for an example
 */
-public class BaseOperation: Operation {
+open class BaseOperation: Operation {
     
     public var baseOperation: BaseOperation!
     public var completion: ((Result<Any?, Error>) -> Void)!
