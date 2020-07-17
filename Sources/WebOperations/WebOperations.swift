@@ -87,8 +87,9 @@ public class WebOperations: NSObject {
         if let foundQueue = customOperationQueues.removeValue(forKey: key) {
             foundQueue.cancelAllOperations()
             queue.name = "\(key).\(UUID())"
-            customOperationQueues[key] = queue
+            
         }
+        customOperationQueues[key] = queue
     }
     
     public func removeCustomQueue(_ queue: OperationQueue, forKey key: String) {
