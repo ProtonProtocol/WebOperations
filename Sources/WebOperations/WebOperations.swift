@@ -116,10 +116,11 @@ public class WebOperations: NSObject {
     
     // MARK: - HTTP Base Requests
     
-    public func request(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), completion: ((Result<Data?, Error>) -> Void)?) {
+    public func request(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), timeoutInterval: TimeInterval = 30, completion: ((Result<Data?, Error>) -> Void)?) {
 
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
+        request.timeoutInterval = timeoutInterval
         
         if let authValue = authValue, auth != .none {
             request.addValue("\(auth.rawValue) \(authValue)", forHTTPHeaderField: "Authorization")
@@ -181,7 +182,7 @@ public class WebOperations: NSObject {
         
     }
 
-    public func request<T: Any>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), completion: ((Result<T?, Error>) -> Void)?) {
+    public func request<T: Any>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), timeoutInterval: TimeInterval = 30, completion: ((Result<T?, Error>) -> Void)?) {
 
         request(method: method, auth: auth, authValue: authValue, contentType: contentType, url: url, parameters: parameters, acceptableResponseCodeRange: acceptableResponseCodeRange) { result in
 
@@ -218,7 +219,7 @@ public class WebOperations: NSObject {
 
     }
     
-    public func request<T: Codable>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), keyDecodingStrategy: JSONDecoder.KeyDecodingStrategy = .useDefaultKeys, completion: ((Result<T, Error>) -> Void)?) {
+    public func request<T: Codable>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), timeoutInterval: TimeInterval = 30, keyDecodingStrategy: JSONDecoder.KeyDecodingStrategy = .useDefaultKeys, completion: ((Result<T, Error>) -> Void)?) {
 
         request(method: method, auth: auth, authValue: authValue, contentType: contentType, url: url, parameters: parameters, acceptableResponseCodeRange: acceptableResponseCodeRange) { result in
 
