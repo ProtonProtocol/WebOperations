@@ -218,7 +218,7 @@ public class WebOperations: NSObject {
 
     }
     
-    public func request<T: Codable>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), completion: ((Result<T, Error>) -> Void)?) {
+    public func request<T: Codable>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), keyDecodingStrategy: JSONDecoder.KeyDecodingStrategy = .useDefaultKeys, completion: ((Result<T, Error>) -> Void)?) {
 
         request(method: method, auth: auth, authValue: authValue, contentType: contentType, url: url, parameters: parameters, acceptableResponseCodeRange: acceptableResponseCodeRange) { result in
 
@@ -234,7 +234,9 @@ public class WebOperations: NSObject {
                 }
 
                 do {
-                    let res = try JSONDecoder().decode(T.self, from: data)
+                    let decoder = JSONDecoder()
+                    decoder.keyDecodingStrategy = keyDecodingStrategy
+                    let res = try decoder.decode(T.self, from: data)
                     DispatchQueue.main.async {
                         completion?(.success(res))
                     }
