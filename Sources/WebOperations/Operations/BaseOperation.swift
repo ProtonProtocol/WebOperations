@@ -23,18 +23,37 @@ open class BaseOperation: Operation {
         self.completion = completion
     }
     
-    private var _executing = false {
-        willSet { willChangeValue(forKey: "isExecuting") }
-        didSet { didChangeValue(forKey: "isExecuting") }
+    private var _executing: Bool = false
+    open override var isExecuting: Bool {
+        get { return _executing }
+        set {
+            guard _executing != newValue else { return }
+            willChangeValue(forKey: "isExecuting")
+            _executing = newValue
+            didChangeValue(forKey: "isExecuting")
+        }
+    }
+
+    private var _finished: Bool = false
+    open override var isFinished : Bool {
+        get { return _finished }
+        set {
+            guard _finished != newValue else { return }
+            willChangeValue(forKey: "isFinished")
+            _finished = newValue
+            didChangeValue(forKey: "isFinished")
+        }
     }
     
-    private var _finished = false {
-        willSet { willChangeValue(forKey: "isFinished") }
-        didSet { didChangeValue(forKey: "isFinished") }
-    }
-    
-    public override var isExecuting: Bool {
-        return _executing
+    private var _cancelled: Bool = false
+    open override var isCancelled: Bool {
+        get { return _cancelled }
+        set {
+            guard _cancelled != newValue else { return }
+            willChangeValue(forKey: "isCancelled")
+            _cancelled = newValue
+            didChangeValue(forKey: "isCancelled")
+        }
     }
     
     open override func main() {
@@ -44,36 +63,36 @@ open class BaseOperation: Operation {
             return
         }
         
-        _executing = true
+        isExecuting = false
         
     }
-    
-    public override var isFinished: Bool {
-        return _finished
-    }
-    
+
     open func finish(retval: Any? = nil, error: Error? = nil) {
         DispatchQueue.main.async {
-            if let error = error {
+            if self.isCancelled {
+                self.completion?(.failure(WebOperationsError.cancelled("Operation Cancelled")))
+            } else if let error = error {
                 self.completion?(.failure(error))
             } else {
                 self.completion?(.success(retval))
             }
         }
-        _executing = false
-        _finished = true
+        isExecuting = false
+        isFinished = true
     }
     
     open func finish<T: Codable>(retval: T? = nil, error: Error? = nil) {
         DispatchQueue.main.async {
-            if let error = error {
+            if self.isCancelled {
+                self.completion?(.failure(WebOperationsError.cancelled("Operation Cancelled")))
+            } else if let error = error {
                 self.completion?(.failure(error))
             } else {
                 self.completion?(.success(retval))
             }
         }
-        _executing = false
-        _finished = true
+        isExecuting = false
+        isFinished = true
     }
     
 }

@@ -260,11 +260,14 @@ public class WebOperations: NSObject {
 public enum WebOperationsError: Error, LocalizedError {
     
     case error(String)
+    case cancelled(String)
     
     public var errorDescription: String? {
         switch self {
         case .error(let message):
-            return "🌐 \(message)"
+            return message
+        case .cancelled(let message):
+            return message
         }
     }
     
