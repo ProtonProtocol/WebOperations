@@ -98,7 +98,7 @@ public class WebOperations: NSObject {
         }
     }
     
-    public func suspend(_ isSuspended: Bool) {
+    public func suspendAllQueues(_ isSuspended: Bool) {
         operationQueueSeq.isSuspended = isSuspended
         operationQueueMulti.isSuspended = isSuspended
         for pair in customOperationQueues {
@@ -106,11 +106,17 @@ public class WebOperations: NSObject {
         }
     }
     
-    public func cancelAll() {
+    public func cancelAllQueues() {
         operationQueueSeq.cancelAllOperations()
         operationQueueMulti.cancelAllOperations()
         for pair in customOperationQueues {
             pair.value.cancelAllOperations()
+        }
+    }
+    
+    public func cancel(queueForKey key: String) {
+        if let foundQueue = customOperationQueues.removeValue(forKey: key) {
+            foundQueue.cancelAllOperations()
         }
     }
     
