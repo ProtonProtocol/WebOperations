@@ -173,6 +173,9 @@ public class WebOperations: NSObject {
 
             if !acceptableResponseCodeRange.contains(response.statusCode) {
                 DispatchQueue.main.async {
+                    if let body = try? JSONSerialization.jsonObject(with: data, options: []) {
+                        print("WEB OPERATIONS ERROR BODY => \(body)")
+                    }
                     completion?(.failure(WebOperationsError.error("Response Error Status code: \(response.statusCode)")))
                 }
                 return
