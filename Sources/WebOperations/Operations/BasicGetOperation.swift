@@ -25,7 +25,7 @@ class BasicGetOperation: BaseOperation {
             return
         }
 
-        WebOperations.shared.request(url: url, errorModel: TestErrorResponseModel.self) { (result: Result<[String: Any]?, WebError>) in
+        WebOperations.shared.request(url: url, errorModel: NilErrorModel.self) { (result: Result<[String: Any]?, WebError>) in
             switch result {
             case .success(let res):
                 if let res = res {
@@ -40,10 +40,4 @@ class BasicGetOperation: BaseOperation {
         
     }
     
-}
-
-
-public struct TestErrorResponseModel: Codable {
-    let error: String
-    let message: String
 }
