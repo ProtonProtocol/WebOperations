@@ -182,17 +182,17 @@ public class WebOperations: NSObject {
                             
                         }
                         DispatchQueue.main.async {
-                           completion?(.failure(WebError(kind: .error(""), response: res, responseCode: response.statusCode)))
+                           completion?(.failure(WebError(kind: .error(""), response: res, statusCode: response.statusCode)))
                         }
                     } catch {
                         DispatchQueue.main.async {
-                            completion?(.failure(WebError(kind: .error("Unable to parse error response into object type given"), responseCode: response.statusCode)))
+                            completion?(.failure(WebError(kind: .error("Unable to parse error response into object type given"), statusCode: response.statusCode)))
                         }
                     }
 
                 } else {
                     DispatchQueue.main.async {
-                        completion?(.failure(WebError(kind: WebError.ErrorKind.error("Unacceptable response code: \(response.statusCode)"), responseCode: response.statusCode)))
+                        completion?(.failure(WebError(kind: WebError.ErrorKind.error("Unacceptable response code: \(response.statusCode)"), statusCode: response.statusCode)))
                     }
                 }
                 
@@ -303,9 +303,9 @@ public struct WebError: Error, LocalizedError {
         }
     }
     
-    public init(kind: ErrorKind, response: Codable? = nil, responseCode: Int? = nil) {
+    public init(kind: ErrorKind, response: Codable? = nil, statusCode: Int? = nil) {
         self.kind = kind
-        self.statusCode = responseCode
+        self.statusCode = statusCode
         self.response = response
     }
     
