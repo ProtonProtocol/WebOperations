@@ -78,7 +78,7 @@ public class WebOperations: NSObject {
             operation.completion = completion
             queue.addOperation(operation)
         } else {
-            completion?(.failure(WebOperationsError.error("MESSAGE => Custom Queue not found")))
+            completion?(.failure(WebError(kind: .error("Custom Queue not found"))))
         }
         
     }
@@ -122,7 +122,7 @@ public class WebOperations: NSObject {
     
     // MARK: - HTTP Base Requests
     
-    public func request(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), timeoutInterval: TimeInterval = 30, completion: ((Result<Data?, Error>) -> Void)?) {
+    public func request<E: Codable>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), timeoutInterval: TimeInterval = 30, errorModel: E.Type? = nil, completion: ((Result<Data?, WebError>) -> Void)?) {
 
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
@@ -143,7 +143,7 @@ public class WebOperations: NSObject {
                 request.httpBody = body
             } catch {
                 DispatchQueue.main.async {
-                    completion?(.failure(error))
+                    completion?(.failure(WebError(kind: WebError.ErrorKind.error("Unable to construct body"))))
                 }
             }
         }
@@ -152,37 +152,54 @@ public class WebOperations: NSObject {
 
             if let error = error {
                 DispatchQueue.main.async {
-                    completion?(.failure(error))
+                    completion?(.failure(WebError(kind: WebError.ErrorKind.error(error.localizedDescription))))
                 }
                 return
             }
 
             guard let data = data else {
                 DispatchQueue.main.async {
-                    completion?(.failure(WebOperationsError.error("No data")))
+                    completion?(.failure(WebError(kind: WebError.ErrorKind.error("No data"))))
                 }
                 return
             }
 
             guard let response = response as? HTTPURLResponse else {
                 DispatchQueue.main.async {
-                    completion?(.failure(WebOperationsError.error("Response Error")))
+                    completion?(.failure(WebError(kind: WebError.ErrorKind.error("No response"))))
                 }
                 return
             }
 
             if !acceptableResponseCodeRange.contains(response.statusCode) {
-                DispatchQueue.main.async {
-                    if let body = try? JSONSerialization.jsonObject(with: data, options: []) {
-                        print("WEB OPERATIONS ERROR BODY => \(body)")
-                    }
-                    completion?(.failure(WebOperationsError.error("Response Error Status code: \(response.statusCode)")))
-                }
-                return
-            }
+                
+                if let errorModel = errorModel {
 
-            DispatchQueue.main.async {
-                completion?(.success(data))
+                    do {
+                        let decoder = JSONDecoder()
+                        let res = try decoder.decode(errorModel, from: data)
+                        DispatchQueue.main.async {
+                            
+                        }
+                        DispatchQueue.main.async {
+                           completion?(.failure(WebError(kind: .error(""), response: res, responseCode: response.statusCode)))
+                        }
+                    } catch {
+                        DispatchQueue.main.async {
+                            completion?(.failure(WebError(kind: .error("Unable to parse error response into object type given"), responseCode: response.statusCode)))
+                        }
+                    }
+
+                } else {
+                    DispatchQueue.main.async {
+                        completion?(.failure(WebError(kind: WebError.ErrorKind.error("Unacceptable response code: \(response.statusCode)"), responseCode: response.statusCode)))
+                    }
+                }
+                
+            } else {
+                DispatchQueue.main.async {
+                    completion?(.success(data))
+                }
             }
 
         }
@@ -191,9 +208,9 @@ public class WebOperations: NSObject {
         
     }
 
-    public func request<T: Any>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), timeoutInterval: TimeInterval = 30, completion: ((Result<T?, Error>) -> Void)?) {
+    public func request<T: Any, E: Codable>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), timeoutInterval: TimeInterval = 30, errorModel: E.Type? = nil, completion: ((Result<T?, WebError>) -> Void)?) {
 
-        request(method: method, auth: auth, authValue: authValue, contentType: contentType, url: url, parameters: parameters, acceptableResponseCodeRange: acceptableResponseCodeRange) { result in
+        request(method: method, auth: auth, authValue: authValue, contentType: contentType, url: url, parameters: parameters, acceptableResponseCodeRange: acceptableResponseCodeRange, errorModel: errorModel) { result in
 
             switch result {
 
@@ -201,7 +218,7 @@ public class WebOperations: NSObject {
 
                 guard let data = data else {
                     DispatchQueue.main.async {
-                        completion?(.failure(WebOperationsError.error("No data")))
+                        completion?(.failure(WebError(kind: WebError.ErrorKind.error("No data"))))
                     }
                     return
                 }
@@ -213,7 +230,7 @@ public class WebOperations: NSObject {
                     }
                 } catch {
                     DispatchQueue.main.async {
-                        completion?(.failure(error))
+                        completion?(.failure(WebError(kind: WebError.ErrorKind.error(error.localizedDescription))))
                     }
                 }
 
@@ -228,9 +245,9 @@ public class WebOperations: NSObject {
 
     }
     
-    public func request<T: Codable>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), timeoutInterval: TimeInterval = 30, keyDecodingStrategy: JSONDecoder.KeyDecodingStrategy = .useDefaultKeys, completion: ((Result<T, Error>) -> Void)?) {
+    public func request<T: Codable, E: Codable>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), timeoutInterval: TimeInterval = 30, keyDecodingStrategy: JSONDecoder.KeyDecodingStrategy = .useDefaultKeys, errorModel: E.Type? = nil, completion: ((Result<T, Error>) -> Void)?) {
 
-        request(method: method, auth: auth, authValue: authValue, contentType: contentType, url: url, parameters: parameters, acceptableResponseCodeRange: acceptableResponseCodeRange) { result in
+        request(method: method, auth: auth, authValue: authValue, contentType: contentType, url: url, parameters: parameters, acceptableResponseCodeRange: acceptableResponseCodeRange, errorModel: errorModel) { result in
 
             switch result {
 
@@ -238,7 +255,7 @@ public class WebOperations: NSObject {
 
                 guard let data = data else {
                     DispatchQueue.main.async {
-                        completion?(.failure(WebOperationsError.error("No data")))
+                        completion?(.failure(WebError(kind: WebError.ErrorKind.error("No data"))))
                     }
                     return
                 }
@@ -266,18 +283,30 @@ public class WebOperations: NSObject {
     
 }
 
-public enum WebOperationsError: Error, LocalizedError {
+public struct WebError: Error, LocalizedError {
     
-    case error(String)
-    case cancelled(String)
+    public enum ErrorKind {
+        case error(String)
+        case cancelledOperation(String)
+    }
     
+    public let kind: ErrorKind
+    public let response: Codable?
+    public let statusCode: Int?
+
     public var errorDescription: String? {
-        switch self {
+        switch self.kind {
         case .error(let message):
             return message
-        case .cancelled(let message):
+        case .cancelledOperation(let message):
             return message
         }
+    }
+    
+    public init(kind: ErrorKind, response: Codable? = nil, responseCode: Int? = nil) {
+        self.kind = kind
+        self.statusCode = responseCode
+        self.response = response
     }
     
 }

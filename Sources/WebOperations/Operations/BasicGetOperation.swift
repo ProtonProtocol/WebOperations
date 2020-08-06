@@ -21,17 +21,17 @@ class BasicGetOperation: BaseOperation {
         super.main()
         
         guard let url = URL(string: self.urlString) else {
-            self.finish(retval: nil, error: WebOperationsError.error("MESSAGE => Unable to form URL for \(self.urlString)"))
+            self.finish(retval: nil, error: WebError(kind: .error("Unable to form URL for \(self.urlString)")))
             return
         }
-        
-        WebOperations.shared.request(url: url) { (result: Result<[String: Any]?, Error>) in
+
+        WebOperations.shared.request(url: url, errorModel: TestErrorResponseModel.self) { (result: Result<[String: Any]?, WebError>) in
             switch result {
             case .success(let res):
                 if let res = res {
                     self.finish(retval: res, error: nil)
                 } else {
-                    self.finish(retval: nil, error: WebOperationsError.error("MESSAGE => An error occured"))
+                    self.finish(retval: nil, error: WebError(kind: .error("An error occured")))
                 }
             case .failure(let error):
                 self.finish(retval: nil, error: error)
@@ -40,4 +40,10 @@ class BasicGetOperation: BaseOperation {
         
     }
     
+}
+
+
+public struct TestErrorResponseModel: Codable {
+    let error: String
+    let message: String
 }
