@@ -295,11 +295,15 @@ public struct WebError: Error, LocalizedError {
     public let statusCode: Int?
 
     public var errorDescription: String? {
-        switch self.kind {
-        case .error(let message):
-            return message
-        case .cancelledOperation(let message):
-            return message
+        if let response = self.response as? ErrorModelMessageProtocol {
+            return response.getMessage()
+        } else {
+            switch self.kind {
+            case .error(let message):
+                return message
+            case .cancelledOperation(let message):
+                return message
+            }
         }
     }
     
@@ -309,6 +313,10 @@ public struct WebError: Error, LocalizedError {
         self.response = response
     }
     
+}
+
+public protocol ErrorModelMessageProtocol {
+    func getMessage() -> String
 }
 
 public struct NilErrorModel: Codable {}
