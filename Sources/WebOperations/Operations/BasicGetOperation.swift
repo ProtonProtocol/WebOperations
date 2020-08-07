@@ -21,7 +21,7 @@ class BasicGetOperation: BaseOperation {
         super.main()
         
         guard let url = URL(string: self.urlString) else {
-            self.finish(retval: nil, error: WebError(kind: .error("Unable to form URL for \(self.urlString)")))
+            self.finish(retval: nil, error: WebError(message: "Unable to form URL for \(self.urlString)"))
             return
         }
 
@@ -31,7 +31,7 @@ class BasicGetOperation: BaseOperation {
                 if let res = res {
                     self.finish(retval: res, error: nil)
                 } else {
-                    self.finish(retval: nil, error: WebError(kind: .error("An error occured")))
+                    self.finish(retval: nil, error: WebError(message: "An error occured"))
                 }
             case .failure(let error):
                 self.finish(retval: nil, error: error)

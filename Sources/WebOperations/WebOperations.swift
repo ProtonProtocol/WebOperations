@@ -78,7 +78,7 @@ public class WebOperations: NSObject {
             operation.completion = completion
             queue.addOperation(operation)
         } else {
-            completion?(.failure(WebError(kind: .error("Custom Queue not found"))))
+            completion?(.failure(WebError(message: "Custom Queue not found")))
         }
         
     }
@@ -143,7 +143,7 @@ public class WebOperations: NSObject {
                 request.httpBody = body
             } catch {
                 DispatchQueue.main.async {
-                    completion?(.failure(WebError(kind: WebError.ErrorKind.error("Unable to construct body"))))
+                    completion?(.failure(WebError(message: "Unable to construct body")))
                 }
             }
         }
@@ -152,21 +152,21 @@ public class WebOperations: NSObject {
 
             if let error = error {
                 DispatchQueue.main.async {
-                    completion?(.failure(WebError(kind: WebError.ErrorKind.error(error.localizedDescription))))
+                    completion?(.failure(WebError(message: error.localizedDescription)))
                 }
                 return
             }
 
             guard let data = data else {
                 DispatchQueue.main.async {
-                    completion?(.failure(WebError(kind: WebError.ErrorKind.error("No data"))))
+                    completion?(.failure(WebError(message: "No data")))
                 }
                 return
             }
 
             guard let response = response as? HTTPURLResponse else {
                 DispatchQueue.main.async {
-                    completion?(.failure(WebError(kind: WebError.ErrorKind.error("No response"))))
+                    completion?(.failure(WebError(message: "No response")))
                 }
                 return
             }
@@ -179,20 +179,17 @@ public class WebOperations: NSObject {
                         let decoder = JSONDecoder()
                         let res = try decoder.decode(errorModel, from: data)
                         DispatchQueue.main.async {
-                            
-                        }
-                        DispatchQueue.main.async {
-                           completion?(.failure(WebError(kind: .error(""), response: res, statusCode: response.statusCode)))
+                            completion?(.failure(WebError(message: "Unable to decode errorModel", response: res, statusCode: response.statusCode)))
                         }
                     } catch {
                         DispatchQueue.main.async {
-                            completion?(.failure(WebError(kind: .error("Unable to parse error response into object type given"), statusCode: response.statusCode)))
+                            completion?(.failure(WebError(message: "Unable to parse error response into object type given", statusCode: response.statusCode)))
                         }
                     }
 
                 } else {
                     DispatchQueue.main.async {
-                        completion?(.failure(WebError(kind: WebError.ErrorKind.error("Unacceptable response code: \(response.statusCode)"), statusCode: response.statusCode)))
+                        completion?(.failure(WebError(message: "Unacceptable response code: \(response.statusCode)", statusCode: response.statusCode)))
                     }
                 }
                 
@@ -218,7 +215,7 @@ public class WebOperations: NSObject {
 
                 guard let data = data else {
                     DispatchQueue.main.async {
-                        completion?(.failure(WebError(kind: WebError.ErrorKind.error("No data"))))
+                        completion?(.failure(WebError(message: "No data")))
                     }
                     return
                 }
@@ -230,7 +227,7 @@ public class WebOperations: NSObject {
                     }
                 } catch {
                     DispatchQueue.main.async {
-                        completion?(.failure(WebError(kind: WebError.ErrorKind.error(error.localizedDescription))))
+                        completion?(.failure(WebError(message: error.localizedDescription)))
                     }
                 }
 
@@ -255,7 +252,7 @@ public class WebOperations: NSObject {
 
                 guard let data = data else {
                     DispatchQueue.main.async {
-                        completion?(.failure(WebError(kind: WebError.ErrorKind.error("No data"))))
+                        completion?(.failure(WebError(message: "No data")))
                     }
                     return
                 }
@@ -268,7 +265,7 @@ public class WebOperations: NSObject {
                         completion?(.success(res))
                     }
                 } catch {
-                    completion?(.failure(WebError(kind: WebError.ErrorKind.error("Unable to decode to errorModel passed in"))))
+                    completion?(.failure(WebError(message: "Unable to decode to errorModel passed in")))
                 }
 
             case .failure(let error):
@@ -285,12 +282,7 @@ public class WebOperations: NSObject {
 
 public struct WebError: Error, LocalizedError {
     
-    public enum ErrorKind {
-        case error(String)
-        case cancelledOperation(String)
-    }
-    
-    public let kind: ErrorKind
+    public let message: String
     public let response: Codable?
     public let statusCode: Int?
 
@@ -298,17 +290,12 @@ public struct WebError: Error, LocalizedError {
         if let response = self.response as? ErrorModelMessageProtocol {
             return response.getMessage()
         } else {
-            switch self.kind {
-            case .error(let message):
-                return message
-            case .cancelledOperation(let message):
-                return message
-            }
+            return message
         }
     }
     
-    public init(kind: ErrorKind, response: Codable? = nil, statusCode: Int? = nil) {
-        self.kind = kind
+    public init(message: String, response: Codable? = nil, statusCode: Int? = nil) {
+        self.message = message
         self.statusCode = statusCode
         self.response = response
     }

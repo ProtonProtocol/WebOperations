@@ -70,7 +70,7 @@ open class BaseOperation: Operation {
     open func finish(retval: Any? = nil, error: WebError? = nil) {
         DispatchQueue.main.async {
             if self.isCancelled {
-                self.completion?(.failure(WebError(kind: .cancelledOperation("Operation Cancelled"))))
+                self.completion?(.failure(WebError(message: "Operation Cancelled")))
             } else if let error = error {
                 self.completion?(.failure(error))
             } else {
@@ -84,7 +84,7 @@ open class BaseOperation: Operation {
     open func finish<T: Codable>(retval: T? = nil, error: WebError? = nil) {
         DispatchQueue.main.async {
             if self.isCancelled {
-                self.completion?(.failure(WebError(kind: .cancelledOperation("Operation Cancelled"))))
+                self.completion?(.failure(WebError(message: "Operation Cancelled")))
             } else if let error = error {
                 self.completion?(.failure(error))
             } else {
