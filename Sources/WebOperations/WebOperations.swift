@@ -55,7 +55,7 @@ public class WebOperations: NSObject {
     // MARK: - Operation Services
     
     public func addSeq(_ operation: BaseOperation,
-                completion: ((Result<Any?, Error>) -> Void)?) {
+                completion: ((Result<Any?, WebError>) -> Void)?) {
         
         operation.completion = completion
         operationQueueSeq.addOperation(operation)
@@ -63,7 +63,7 @@ public class WebOperations: NSObject {
     }
     
     public func addMulti(_ operation: BaseOperation,
-                  completion: ((Result<Any?, Error>) -> Void)?) {
+                  completion: ((Result<Any?, WebError>) -> Void)?) {
         
         operation.completion = completion
         operationQueueMulti.addOperation(operation)
@@ -72,7 +72,7 @@ public class WebOperations: NSObject {
     
     public func add(_ operation: BaseOperation,
                     toCustomQueueNamed queueName: String,
-                    completion: ((Result<Any?, Error>) -> Void)?) {
+                    completion: ((Result<Any?, WebError>) -> Void)?) {
         
         if let queue = customOperationQueues[queueName] {
             operation.completion = completion

@@ -14,11 +14,11 @@ Create your own Operations be inheriting from BaseOperation. Checkout BasicGetOp
 open class BaseOperation: Operation {
     
     public var baseOperation: BaseOperation!
-    public var completion: ((Result<Any?, Error>) -> Void)!
+    public var completion: ((Result<Any?, WebError>) -> Void)!
     
     public override init() {}
     
-    public convenience init(_ completion: @escaping ((Result<Any?, Error>) -> Void)) {
+    public convenience init(_ completion: @escaping ((Result<Any?, WebError>) -> Void)) {
         self.init()
         self.completion = completion
     }
@@ -67,7 +67,7 @@ open class BaseOperation: Operation {
         
     }
 
-    open func finish(retval: Any? = nil, error: Error? = nil) {
+    open func finish(retval: Any? = nil, error: WebError? = nil) {
         DispatchQueue.main.async {
             if self.isCancelled {
                 self.completion?(.failure(WebError(kind: .cancelledOperation("Operation Cancelled"))))
@@ -81,7 +81,7 @@ open class BaseOperation: Operation {
         isFinished = true
     }
     
-    open func finish<T: Codable>(retval: T? = nil, error: Error? = nil) {
+    open func finish<T: Codable>(retval: T? = nil, error: WebError? = nil) {
         DispatchQueue.main.async {
             if self.isCancelled {
                 self.completion?(.failure(WebError(kind: .cancelledOperation("Operation Cancelled"))))
