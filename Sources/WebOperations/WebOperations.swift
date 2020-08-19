@@ -179,7 +179,11 @@ public class WebOperations: NSObject {
                         let decoder = JSONDecoder()
                         let res = try decoder.decode(errorModel, from: data)
                         DispatchQueue.main.async {
-                            completion?(.failure(WebError(message: "Unable to decode errorModel", response: res, statusCode: response.statusCode)))
+                            if let res = res as? ErrorModelMessageProtocol {
+                                completion?(.failure(WebError(message: res.getMessage(), response: res, statusCode: response.statusCode)))
+                            } else {
+                                completion?(.failure(WebError(message: "", response: res, statusCode: response.statusCode)))
+                            }
                         }
                     } catch {
                         DispatchQueue.main.async {
