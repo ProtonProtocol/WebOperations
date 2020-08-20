@@ -265,7 +265,7 @@ public class WebOperations: NSObject {
                         completion?(.success(res))
                     }
                 } catch {
-                    completion?(.failure(WebError(message: "Unable to decode to errorModel passed in")))
+                    completion?(.failure(WebError(message: error.localizedDescription)))
                 }
 
             case .failure(let error):
