@@ -7,7 +7,7 @@ let package = Package(
     name: "WebOperations",
     platforms: [
         .macOS(.v10_15),
-        .iOS(.v12)
+        .iOS(.v13)
     ],
     products: [
         .library(

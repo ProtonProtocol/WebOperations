@@ -8,12 +8,14 @@
 
 import Foundation
 
-public class WebOperations: NSObject {
+public class WebOperations: NSObject, URLSessionWebSocketDelegate {
     
     public var operationQueueSeq: OperationQueue
     public var operationQueueMulti: OperationQueue
     public var customOperationQueues: [String: OperationQueue]
+    public var webSocketTasks: [URLSessionWebSocketTask]
     public var session: URLSession
+    public var pingTimer: Timer?
     
     public enum RequestMethod: String {
         case get = "GET"
@@ -49,7 +51,84 @@ public class WebOperations: NSObject {
         operationQueueMulti.name = "\(UUID()).multi"
         
         customOperationQueues = [:]
+        webSocketTasks = []
+
+    }
+    
+    // MARK: - WebSocket Services
+    
+    @discardableResult
+    public func addSocket(withURL url: URL, receive: @escaping (Result<URLSessionWebSocketTask.Message, Error>) -> Void) -> Bool {
         
+        if self.webSocketTasks.contains(where: { $0.originalRequest?.url?.absoluteString == url.absoluteString }) {
+            return false
+        }
+        
+        if url.absoluteString.hasPrefix("wss://") || url.absoluteString.hasPrefix("ws://") {
+            
+            let webSocketTask = session.webSocketTask(with: url)
+            webSocketTask.taskDescription = url.absoluteString
+
+            func receiveMessage() {
+                webSocketTask.receive { result in
+                    receive(result)
+                    receiveMessage()
+                }
+            }
+
+            webSocketTask.resume()
+            
+            self.webSocketTasks.append(webSocketTask)
+            
+            if self.webSocketTasks.count == 1 {
+                self.pingTimer?.invalidate()
+                self.setPingTimer()
+            }
+            
+            return true
+
+        } else {
+            return false
+        }
+        
+    }
+    
+    @discardableResult
+    public func closeSocket(withURL url: URL) -> Bool {
+        
+        if let idx = self.webSocketTasks.firstIndex(where: { $0.originalRequest?.url?.absoluteString == url.absoluteString }) {
+            self.pingTimer?.invalidate()
+            self.webSocketTasks[idx].cancel(with: .normalClosure, reason: nil)
+            self.webSocketTasks.remove(at: idx)
+            self.setPingTimer()
+            return true
+        }
+
+        return false
+        
+    }
+    
+    internal func closeAllSockets() {
+        for webSocketTask in webSocketTasks {
+            webSocketTask.cancel(with: .normalClosure, reason: nil)
+        }
+    }
+    
+    internal func setPingTimer() {
+        pingTimer = Timer.init(timeInterval: 8, target: self, selector: #selector(sendPings), userInfo: nil, repeats: true)
+    }
+    
+    @objc internal func sendPings() {
+        for webSocketTask in webSocketTasks {
+            webSocketTask.sendPing { error in
+                if let error = error {
+                    print("Sending PING for \(webSocketTask.taskDescription ?? "") failed: \(error.localizedDescription)")
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+                    self.sendPings()
+                }
+            }
+        }
     }
     
     // MARK: - Operation Services
@@ -278,6 +357,25 @@ public class WebOperations: NSObject {
 
     }
     
+    // MARK: - WebSocket Delegates
+    
+    public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
+        print("disconnected...")
+        print(webSocketTask.taskDescription ?? "")
+        print(closeCode)
+    }
+    
+    public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
+        print("connected...")
+        print(webSocketTask.taskDescription ?? "")
+    }
+    
+    deinit {
+        self.cancelAllQueues()
+        self.pingTimer?.invalidate()
+        self.closeAllSockets()
+        self.webSocketTasks.removeAll()
+    }
 }
 
 public struct WebError: Error, LocalizedError {
