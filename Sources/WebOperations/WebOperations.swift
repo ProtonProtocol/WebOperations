@@ -36,8 +36,8 @@ public class WebOperations: NSObject, URLSessionWebSocketDelegate {
     }
     
     public struct WebSocketReceiveResponse {
-        let identifier: String
-        let message: URLSessionWebSocketTask.Message
+        public let identifier: String
+        public let message: URLSessionWebSocketTask.Message
     }
     
     public static let shared = WebOperations()
