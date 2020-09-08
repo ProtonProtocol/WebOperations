@@ -35,6 +35,11 @@ public class WebOperations: NSObject, URLSessionWebSocketDelegate {
         case none = ""
     }
     
+    public struct WebSocketReceiveResponse {
+        let identifier: String
+        let message: URLSessionWebSocketTask.Message
+    }
+    
     public static let shared = WebOperations()
     
     private override init() {
@@ -58,7 +63,7 @@ public class WebOperations: NSObject, URLSessionWebSocketDelegate {
     // MARK: - WebSocket Services
     
     @discardableResult
-    public func addSocket(withURL url: URL, receive: @escaping (Result<URLSessionWebSocketTask.Message, Error>) -> Void) -> Bool {
+    public func addSocket(withURL url: URL, receive: @escaping (Result<WebSocketReceiveResponse, Error>) -> Void) -> Bool {
         
         if self.webSocketTasks.contains(where: { $0.originalRequest?.url?.absoluteString == url.absoluteString }) {
             return false
@@ -71,7 +76,14 @@ public class WebOperations: NSObject, URLSessionWebSocketDelegate {
 
             func receiveMessage() {
                 webSocketTask.receive { result in
-                    receive(result)
+                    
+                    switch result {
+                    case .failure(let error):
+                        receive(.failure(error))
+                    case .success(let message):
+                        let webSocketReceiveResponse = WebSocketReceiveResponse(identifier: webSocketTask.taskDescription!, message: message)
+                        receive(.success(webSocketReceiveResponse))
+                    }
                     receiveMessage()
                 }
             }
