@@ -73,6 +73,7 @@ public class WebOperations: NSObject, URLSessionWebSocketDelegate {
             
             let webSocketTask = session.webSocketTask(with: url)
             webSocketTask.taskDescription = url.absoluteString
+            webSocketTask.resume()
 
             func receiveMessage() {
                 webSocketTask.receive { result in
@@ -89,11 +90,10 @@ public class WebOperations: NSObject, URLSessionWebSocketDelegate {
             }
 
             receiveMessage()
-            webSocketTask.resume()
-            
+
             self.webSocketTasks.append(webSocketTask)
             
-            if self.webSocketTasks.count == 1 {
+            if self.webSocketTasks.count > 1 {
                 self.pingTimer?.invalidate()
                 self.setPingTimer()
             }
