@@ -88,6 +88,7 @@ public class WebOperations: NSObject, URLSessionWebSocketDelegate {
                 }
             }
 
+            receiveMessage()
             webSocketTask.resume()
             
             self.webSocketTasks.append(webSocketTask)
