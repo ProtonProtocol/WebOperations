@@ -128,7 +128,7 @@ public class WebOperations: NSObject, URLSessionWebSocketDelegate {
     }
     
     internal func setPingTimer() {
-        pingTimer = Timer.init(timeInterval: 8, target: self, selector: #selector(sendPings), userInfo: nil, repeats: true)
+        pingTimer = Timer.init(timeInterval: 5, target: self, selector: #selector(sendPings), userInfo: nil, repeats: true)
     }
     
     @objc internal func sendPings() {
@@ -136,10 +136,8 @@ public class WebOperations: NSObject, URLSessionWebSocketDelegate {
             webSocketTask.sendPing { error in
                 if let error = error {
                     print("Sending PING for \(webSocketTask.taskDescription ?? "") failed: \(error.localizedDescription)")
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+                } else {
                     print("Sending PING for \(webSocketTask.taskDescription ?? "")")
-                    self.sendPings()
                 }
             }
         }
