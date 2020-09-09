@@ -84,7 +84,7 @@ public class WebOperations: NSObject, URLSessionWebSocketDelegate {
                         let webSocketReceiveResponse = WebSocketReceiveResponse(identifier: webSocketTask.taskDescription!, message: message)
                         receive(.success(webSocketReceiveResponse))
                     }
-                    receiveMessage()
+                    //receiveMessage()
                 }
             }
 
