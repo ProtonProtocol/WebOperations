@@ -85,7 +85,7 @@ public class WebOperations: NSObject, URLSessionWebSocketDelegate {
                         let webSocketReceiveResponse = WebSocketReceiveResponse(identifier: webSocketTask.taskDescription!, message: message)
                         receive(.success(webSocketReceiveResponse))
                     }
-                    //receiveMessage()
+                    receiveMessage()
                 }
             }
 
@@ -95,6 +95,7 @@ public class WebOperations: NSObject, URLSessionWebSocketDelegate {
             
             if self.webSocketTasks.count > 1 {
                 self.pingTimer?.invalidate()
+                self.pingTimer = nil
                 self.setPingTimer()
             }
             
@@ -127,20 +128,19 @@ public class WebOperations: NSObject, URLSessionWebSocketDelegate {
         }
     }
     
-    internal func setPingTimer() {
-        pingTimer = Timer.init(timeInterval: 5, target: self, selector: #selector(sendPings), userInfo: nil, repeats: true)
-    }
-    
-    @objc internal func sendPings() {
-        for webSocketTask in webSocketTasks {
-            webSocketTask.sendPing { error in
-                if let error = error {
-                    print("Sending PING for \(webSocketTask.taskDescription ?? "") failed: \(error.localizedDescription)")
-                } else {
-                    print("Sending PING for \(webSocketTask.taskDescription ?? "")")
+    func setPingTimer() {
+        pingTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true, block: { [weak self] timer in
+            guard let websockets = self?.webSocketTasks else { return }
+            for webSocketTask in websockets {
+                webSocketTask.sendPing { error in
+                    if let error = error {
+                        print("Sending PING for \(webSocketTask.taskDescription ?? "") failed: \(error.localizedDescription)")
+                    } else {
+                        print("Sending PING for \(webSocketTask.taskDescription ?? "")")
+                    }
                 }
             }
-        }
+        })
     }
     
     // MARK: - Operation Services
