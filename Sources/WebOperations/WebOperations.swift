@@ -93,7 +93,7 @@ public class WebOperations: NSObject, URLSessionWebSocketDelegate {
 
             self.webSocketTasks.append(webSocketTask)
             
-            if self.webSocketTasks.count > 1 {
+            if self.webSocketTasks.count > 0 && self.pingTimer != nil && (self.pingTimer?.isValid ?? false) == false {
                 self.pingTimer?.invalidate()
                 self.setPingTimer()
             }
