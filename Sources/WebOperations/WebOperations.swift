@@ -138,6 +138,7 @@ public class WebOperations: NSObject, URLSessionWebSocketDelegate {
                     print("Sending PING for \(webSocketTask.taskDescription ?? "") failed: \(error.localizedDescription)")
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+                    print("Sending PING for \(webSocketTask.taskDescription ?? "")")
                     self.sendPings()
                 }
             }
