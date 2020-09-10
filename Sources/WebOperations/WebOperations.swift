@@ -135,6 +135,7 @@ public class WebOperations: NSObject, URLSessionWebSocketDelegate {
                 for webSocketTask in websockets {
                     webSocketTask.sendPing { error in
                         if let error = error {
+                            webSocketTask.resume()
                             print("Sending PING for \(webSocketTask.taskDescription ?? "") failed: \(error.localizedDescription)")
                         } else {
                             print("Sending PING for \(webSocketTask.taskDescription ?? "")")
