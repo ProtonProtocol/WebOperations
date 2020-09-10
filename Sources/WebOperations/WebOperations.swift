@@ -13,9 +13,7 @@ public class WebOperations: NSObject, URLSessionWebSocketDelegate {
     public var operationQueueSeq: OperationQueue
     public var operationQueueMulti: OperationQueue
     public var customOperationQueues: [String: OperationQueue]
-    public var webSocketTasks: [URLSessionWebSocketTask]
     public var session: URLSession
-    public var pingTimer: Timer?
     
     public enum RequestMethod: String {
         case get = "GET"
@@ -56,94 +54,7 @@ public class WebOperations: NSObject, URLSessionWebSocketDelegate {
         operationQueueMulti.name = "\(UUID()).multi"
         
         customOperationQueues = [:]
-        webSocketTasks = []
 
-    }
-    
-    // MARK: - WebSocket Services
-    
-    @discardableResult
-    public func addSocket(withURL url: URL, receive: @escaping (Result<WebSocketReceiveResponse, Error>) -> Void) -> Bool {
-        
-        if self.webSocketTasks.contains(where: { $0.originalRequest?.url?.absoluteString == url.absoluteString }) {
-            return false
-        }
-        
-        if url.absoluteString.hasPrefix("wss://") || url.absoluteString.hasPrefix("ws://") {
-            
-            let webSocketTask = session.webSocketTask(with: url)
-            webSocketTask.taskDescription = url.absoluteString
-            webSocketTask.resume()
-
-            func receiveMessage() {
-                webSocketTask.receive { result in
-                    
-                    switch result {
-                    case .failure(let error):
-                        receive(.failure(error))
-                    case .success(let message):
-                        let webSocketReceiveResponse = WebSocketReceiveResponse(identifier: webSocketTask.taskDescription!, message: message)
-                        receive(.success(webSocketReceiveResponse))
-                        receiveMessage()
-                    }
-                    
-                }
-            }
-
-            receiveMessage()
-
-            self.webSocketTasks.append(webSocketTask)
-            
-            if self.webSocketTasks.count > 0 || self.pingTimer == nil || (self.pingTimer?.isValid ?? false) == false {
-                self.pingTimer?.invalidate()
-                self.setPingTimer()
-            }
-            
-            return true
-
-        } else {
-            return false
-        }
-        
-    }
-    
-    @discardableResult
-    public func closeSocket(withURL url: URL) -> Bool {
-        
-        if let idx = self.webSocketTasks.firstIndex(where: { $0.originalRequest?.url?.absoluteString == url.absoluteString }) {
-            self.pingTimer?.invalidate()
-            self.webSocketTasks[idx].cancel(with: .normalClosure, reason: nil)
-            self.webSocketTasks.remove(at: idx)
-            self.setPingTimer()
-            return true
-        }
-
-        return false
-        
-    }
-    
-    internal func closeAllSockets() {
-        for webSocketTask in webSocketTasks {
-            webSocketTask.cancel(with: .normalClosure, reason: nil)
-        }
-    }
-    
-    func setPingTimer() {
-        DispatchQueue.main.async {
-            self.pingTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true, block: { [weak self] timer in
-                guard let websockets = self?.webSocketTasks else { return }
-                for webSocketTask in websockets {
-                    webSocketTask.sendPing { error in
-                        if let error = error {
-                            webSocketTask.resume()
-                            print("Sending PING for \(webSocketTask.taskDescription ?? "") failed: \(error.localizedDescription)")
-                        } else {
-                            print("Sending PING for \(webSocketTask.taskDescription ?? "")")
-                        }
-                    }
-                }
-            })
-        }
     }
     
     // MARK: - Operation Services
@@ -372,24 +283,8 @@ public class WebOperations: NSObject, URLSessionWebSocketDelegate {
 
     }
     
-    // MARK: - WebSocket Delegates
-    
-    public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
-        print("disconnected...")
-        print(webSocketTask.taskDescription ?? "")
-        print(closeCode)
-    }
-    
-    public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
-        print("connected...")
-        print(webSocketTask.taskDescription ?? "")
-    }
-    
     deinit {
         self.cancelAllQueues()
-        self.pingTimer?.invalidate()
-        self.closeAllSockets()
-        self.webSocketTasks.removeAll()
     }
 }
 
