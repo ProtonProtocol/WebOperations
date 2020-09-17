@@ -8,7 +8,7 @@
 
 import Foundation
 
-public class WebOperations: NSObject, URLSessionWebSocketDelegate {
+public class WebOperations: NSObject {
     
     public var operationQueueSeq: OperationQueue
     public var operationQueueMulti: OperationQueue
@@ -31,11 +31,6 @@ public class WebOperations: NSObject, URLSessionWebSocketDelegate {
     public enum ContentType: String {
         case applicationJson = "application/json"
         case none = ""
-    }
-    
-    public struct WebSocketReceiveResponse {
-        public let identifier: String
-        public let message: URLSessionWebSocketTask.Message
     }
     
     public static let shared = WebOperations()
