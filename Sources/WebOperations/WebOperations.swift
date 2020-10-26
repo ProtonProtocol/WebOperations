@@ -49,8 +49,24 @@ public class WebOperations: NSObject {
         operationQueueMulti.name = "\(UUID()).multi"
         
         customOperationQueues = [:]
-
+        
     }
+    
+//    public func dbug() {
+//        Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] timer in
+//
+//            print("======")
+//            print("SEQ => \(String(describing: self?.operationQueueSeq.operationCount))")
+//            print("MULTI => \(String(describing: self?.operationQueueMulti.operationCount))")
+//
+//            if let customQueues = self?.customOperationQueues {
+//                for queue in customQueues {
+//                    print("CUSTOM => \(queue.key), \(queue.value.operationCount)")
+//                }
+//            }
+//
+//        }
+//    }
     
     // MARK: - Operation Services
     
@@ -122,7 +138,7 @@ public class WebOperations: NSObject {
     
     // MARK: - HTTP Base Requests
     
-    public func request<E: Codable>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), timeoutInterval: TimeInterval = 30, errorModel: E.Type, completion: ((Result<Data?, WebError>) -> Void)?) {
+    public func request<E: Codable>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), timeoutInterval: TimeInterval = 5, errorModel: E.Type, completion: ((Result<Data?, WebError>) -> Void)?) {
 
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
@@ -142,32 +158,25 @@ public class WebOperations: NSObject {
                 let body = try JSONSerialization.data(withJSONObject: parameters, options: [])
                 request.httpBody = body
             } catch {
-                DispatchQueue.main.async {
-                    completion?(.failure(WebError(message: "Unable to construct body")))
-                }
+                completion?(.failure(WebError(message: "Unable to construct body")))
+                return
             }
         }
 
         let task = session.dataTask(with: request) { data, response, error in
 
             if let error = error {
-                DispatchQueue.main.async {
-                    completion?(.failure(WebError(message: error.localizedDescription)))
-                }
+                completion?(.failure(WebError(message: error.localizedDescription)))
                 return
             }
 
             guard let data = data else {
-                DispatchQueue.main.async {
-                    completion?(.failure(WebError(message: "No data")))
-                }
+                completion?(.failure(WebError(message: "No data")))
                 return
             }
 
             guard let response = response as? HTTPURLResponse else {
-                DispatchQueue.main.async {
-                    completion?(.failure(WebError(message: "No response")))
-                }
+                completion?(.failure(WebError(message: "No response")))
                 return
             }
 
@@ -178,25 +187,17 @@ public class WebOperations: NSObject {
                     do {
                         let decoder = JSONDecoder()
                         let res = try decoder.decode(errorModel, from: data)
-                        DispatchQueue.main.async {
-                            completion?(.failure(WebError(message: (res as? ErrorModelMessageProtocol)?.getMessage() ?? "", response: res, statusCode: response.statusCode)))
-                        }
+                        completion?(.failure(WebError(message: (res as? ErrorModelMessageProtocol)?.getMessage() ?? "", response: res, statusCode: response.statusCode)))
                     } catch {
-                        DispatchQueue.main.async {
-                            completion?(.failure(WebError(message: "Unable to parse error response into object type given", statusCode: response.statusCode)))
-                        }
+                        completion?(.failure(WebError(message: "Unable to parse error response into object type given", statusCode: response.statusCode)))
                     }
 
                 } else {
-                    DispatchQueue.main.async {
-                        completion?(.failure(WebError(message: "Unacceptable response code: \(response.statusCode)", statusCode: response.statusCode)))
-                    }
+                    completion?(.failure(WebError(message: "Unacceptable response code: \(response.statusCode)", statusCode: response.statusCode)))
                 }
                 
             } else {
-                DispatchQueue.main.async {
-                    completion?(.success(data))
-                }
+                completion?(.success(data))
             }
 
         }
@@ -205,7 +206,7 @@ public class WebOperations: NSObject {
         
     }
 
-    public func request<T: Any, E: Codable>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), timeoutInterval: TimeInterval = 30, errorModel: E.Type, completion: ((Result<T?, WebError>) -> Void)?) {
+    public func request<T: Any, E: Codable>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), timeoutInterval: TimeInterval = 5, errorModel: E.Type, completion: ((Result<T?, WebError>) -> Void)?) {
 
         request(method: method, auth: auth, authValue: authValue, contentType: contentType, url: url, parameters: parameters, acceptableResponseCodeRange: acceptableResponseCodeRange, errorModel: errorModel) { result in
 
@@ -214,27 +215,19 @@ public class WebOperations: NSObject {
             case .success(let data):
 
                 guard let data = data else {
-                    DispatchQueue.main.async {
-                        completion?(.failure(WebError(message: "No data")))
-                    }
+                    completion?(.failure(WebError(message: "No data")))
                     return
                 }
 
                 do {
                     let json = try JSONSerialization.jsonObject(with: data, options: [])
-                    DispatchQueue.main.async {
-                        completion?(.success(json as? T))
-                    }
+                    completion?(.success(json as? T))
                 } catch {
-                    DispatchQueue.main.async {
-                        completion?(.failure(WebError(message: error.localizedDescription)))
-                    }
+                    completion?(.failure(WebError(message: error.localizedDescription)))
                 }
 
             case .failure(let error):
-                DispatchQueue.main.async {
-                    completion?(.failure(error))
-                }
+                completion?(.failure(error))
 
             }
 
@@ -242,7 +235,7 @@ public class WebOperations: NSObject {
 
     }
     
-    public func request<T: Codable, E: Codable>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), timeoutInterval: TimeInterval = 30, keyDecodingStrategy: JSONDecoder.KeyDecodingStrategy = .useDefaultKeys, errorModel: E.Type, completion: ((Result<T, WebError>) -> Void)?) {
+    public func request<T: Codable, E: Codable>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), timeoutInterval: TimeInterval = 5, keyDecodingStrategy: JSONDecoder.KeyDecodingStrategy = .useDefaultKeys, errorModel: E.Type, completion: ((Result<T, WebError>) -> Void)?) {
 
         request(method: method, auth: auth, authValue: authValue, contentType: contentType, url: url, parameters: parameters, acceptableResponseCodeRange: acceptableResponseCodeRange, errorModel: errorModel) { result in
 
@@ -251,9 +244,7 @@ public class WebOperations: NSObject {
             case .success(let data):
 
                 guard let data = data else {
-                    DispatchQueue.main.async {
-                        completion?(.failure(WebError(message: "No data")))
-                    }
+                    completion?(.failure(WebError(message: "No data")))
                     return
                 }
 
@@ -261,17 +252,13 @@ public class WebOperations: NSObject {
                     let decoder = JSONDecoder()
                     decoder.keyDecodingStrategy = keyDecodingStrategy
                     let res = try decoder.decode(T.self, from: data)
-                    DispatchQueue.main.async {
-                        completion?(.success(res))
-                    }
+                    completion?(.success(res))
                 } catch {
                     completion?(.failure(WebError(message: error.localizedDescription)))
                 }
 
             case .failure(let error):
-                DispatchQueue.main.async {
-                    completion?(.failure(error))
-                }
+                completion?(.failure(error))
             }
 
         }
