@@ -76,9 +76,11 @@ open class BaseOperation: Operation {
             } else {
                 self.completion?(.success(retval))
             }
+            WebOperations.shared.totalOperationCount -= 1
         }
         isExecuting = false
         isFinished = true
+
     }
     
     open func finish<T: Codable>(retval: T? = nil, error: WebError? = nil) {
@@ -90,6 +92,7 @@ open class BaseOperation: Operation {
             } else {
                 self.completion?(.success(retval))
             }
+            WebOperations.shared.totalOperationCount -= 1
         }
         isExecuting = false
         isFinished = true

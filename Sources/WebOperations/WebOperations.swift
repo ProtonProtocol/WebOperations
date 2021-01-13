@@ -8,12 +8,14 @@
 
 import Foundation
 
-public class WebOperations: NSObject {
+public class WebOperations: NSObject, ObservableObject {
     
     public var operationQueueSeq: OperationQueue
     public var operationQueueMulti: OperationQueue
     public var customOperationQueues: [String: OperationQueue]
     public var session: URLSession
+    
+    @Published public var totalOperationCount = 0
     
     public enum RequestMethod: String {
         case get = "GET"
@@ -75,6 +77,7 @@ public class WebOperations: NSObject {
         
         operation.completion = completion
         operationQueueSeq.addOperation(operation)
+        totalOperationCount += 1
         
     }
     
@@ -83,7 +86,7 @@ public class WebOperations: NSObject {
         
         operation.completion = completion
         operationQueueMulti.addOperation(operation)
-        
+        totalOperationCount += 1
     }
     
     public func add(_ operation: BaseOperation,
@@ -93,6 +96,7 @@ public class WebOperations: NSObject {
         if let queue = customOperationQueues[queueName] {
             operation.completion = completion
             queue.addOperation(operation)
+            totalOperationCount += 1
         } else {
             completion?(.failure(WebError(message: "Custom Queue not found")))
         }
@@ -108,7 +112,7 @@ public class WebOperations: NSObject {
         customOperationQueues[key] = queue
     }
     
-    public func removeCustomQueue(_ queue: OperationQueue, forKey key: String) {
+    public func removeCustomQueue(forKey key: String) {
         if let queue = customOperationQueues.removeValue(forKey: key) {
             queue.cancelAllOperations()
         }
