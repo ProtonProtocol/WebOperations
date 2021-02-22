@@ -64,6 +64,9 @@ public class WebOperations: NSObject, ObservableObject {
 //            if let customQueues = self?.customOperationQueues {
 //                for queue in customQueues {
 //                    print("CUSTOM => \(queue.key), \(queue.value.operationCount)")
+//                    for op in queue.value.operations {
+//                        print("CUSTOM OPERATION CLASS \(op)")
+//                    }
 //                }
 //            }
 //
@@ -212,7 +215,7 @@ public class WebOperations: NSObject, ObservableObject {
 
     public func request<T: Any, E: Codable>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), timeoutInterval: TimeInterval = 30, errorModel: E.Type, completion: ((Result<T?, WebError>) -> Void)?) {
 
-        request(method: method, auth: auth, authValue: authValue, contentType: contentType, url: url, parameters: parameters, acceptableResponseCodeRange: acceptableResponseCodeRange, errorModel: errorModel) { result in
+        request(method: method, auth: auth, authValue: authValue, contentType: contentType, url: url, parameters: parameters, acceptableResponseCodeRange: acceptableResponseCodeRange, timeoutInterval: timeoutInterval, errorModel: errorModel) { result in
 
             switch result {
 
@@ -241,7 +244,7 @@ public class WebOperations: NSObject, ObservableObject {
     
     public func request<T: Codable, E: Codable>(method: RequestMethod = .get, auth: Auth = .none, authValue: String? = nil, contentType: ContentType = .applicationJson, url: URL, parameters: [String: Any]? = nil, acceptableResponseCodeRange: ClosedRange<Int> = (200...299), timeoutInterval: TimeInterval = 30, keyDecodingStrategy: JSONDecoder.KeyDecodingStrategy = .useDefaultKeys, errorModel: E.Type, completion: ((Result<T, WebError>) -> Void)?) {
 
-        request(method: method, auth: auth, authValue: authValue, contentType: contentType, url: url, parameters: parameters, acceptableResponseCodeRange: acceptableResponseCodeRange, errorModel: errorModel) { result in
+        request(method: method, auth: auth, authValue: authValue, contentType: contentType, url: url, parameters: parameters, acceptableResponseCodeRange: acceptableResponseCodeRange, timeoutInterval: timeoutInterval, errorModel: errorModel) { result in
 
             switch result {
 
