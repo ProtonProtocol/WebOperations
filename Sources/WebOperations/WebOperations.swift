@@ -200,7 +200,20 @@ public class WebOperations: NSObject, ObservableObject {
                     }
 
                 } else {
-                    completion?(.failure(WebError(message: "Unacceptable response code: \(response.statusCode)", statusCode: response.statusCode)))
+                    
+                    var message: String = "Unacceptable response code: \(response.statusCode)"
+                    
+                    do {
+                        let res = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+                        if let res = res {
+                            message = res.description
+                        }
+                    } catch {
+                        print(error.localizedDescription)
+                    }
+                    
+                    completion?(.failure(WebError(message: message, statusCode: response.statusCode)))
+                    
                 }
                 
             } else {
